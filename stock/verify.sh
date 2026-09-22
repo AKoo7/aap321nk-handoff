@@ -45,7 +45,7 @@ if [ -d "$K" ]; then
 	check "$K/owrt_mem.dtb" 888eeebfb2038b8dfa0295194d837042
 	check "$K/desc_blob.bin" 70efe97ba0dfd18960c73ca21f8ec72a
 	check "$K/pty_owrt2.ko" 9e30e1e8efef6d12a54ad823a6ac00be
-	check "$K/handoff.sh"   774469d5a21323cd3bc0cbbcd4471087
+	check "$K/handoff.sh"   d3abeb2036e1765b1579187fc69db30d
 else
 	echo "  $K not mounted (in mainline: ubiattach -m 22 then mount ubiN:user_data ...)"
 fi

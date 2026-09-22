@@ -55,13 +55,14 @@ of the staged image.  The payload (`payload/pj_owrt2.s`, 164 B) therefore:
 
 Requirements outside the payload:
 
-* **CPU1/CPU2 must be parked, really parked.**  `echo 0 > /sys/devices/system/cpu/cpu1/online`
-  then poll `/sys/devices/system/cpu/online` until it reads `0` (a two-second settle follows).
-  A core still executing the 32-bit kernel takes a bogus PSCI call and panics the box out of the
-  hand-off (`Comm: swapper/1 … __invoke_psci_fn_smc … Code: bad PC value`).  Boot the stock side
-  with **`maxcpus=1`** so the secondaries never run at all: mainline's AArch64 PSCI can then bring
-  them up (`CPU1: Booted secondary processor`) — a core the 32-bit kernel `CPU_OFF`ed cannot be
-  revived.
+* **No other core may be running** across the switch.  A core still executing the 32-bit kernel
+  takes a bogus PSCI call and panics the box out of the hand-off (`Comm: swapper/1 …
+  __invoke_psci_fn_smc … Code: bad PC value`), so an *online* secondary has to be parked — but a
+  core the 32-bit kernel `CPU_OFF`s can never be revived by AArch64 PSCI, so parking costs SMP.
+  Boot the stock side with **`maxcpus=1`** (what `stock/install.sh` sets) and the secondaries never
+  run at all: they stay in reset, nothing needs parking, and mainline brings both up
+  (`CPU1: Booted secondary processor`).  The hook therefore parks a core **only if it is online**
+  — which is why something onlining CPU1 in stock silently costs you a core in mainline.
 * **The Image must be at the start of the RAM range the DTB declares** (`text_offset = 0`), and
   the DTB must declare enough RAM: `/memory = <0x0 0x44000000 0x0 0x1c000000>` (448 MB).  The
   original port DTB's 80 MB produced `Kernel panic - not syncing: System is deadlocked on memory`.

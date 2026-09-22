@@ -86,6 +86,9 @@ Requirements, step-by-step install, and the arming procedure: **[INSTALL.md](INS
   firmware-specific.  It is not a generic IPQ5018 trick.
 * Stock still boots first for ~60 s; that is the price of leaving the signed chain intact.
 * The auto-disarm path is logic-verified but has not been exercised by a real TZ hang.
+* Both cores only come up if nothing onlined CPU1 in stock: a parked (AArch32 `CPU_OFF`) core
+  cannot be revived by mainline's AArch64 PSCI.  The hook parks one only when it is actually
+  running.
 
 ## License / provenance
 

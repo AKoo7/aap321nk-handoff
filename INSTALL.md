@@ -180,6 +180,7 @@ sh mainline/uninstall.sh
 | hook runs but the box resets ~90 s later, `dmesg` has no `panic` | the TZ hang: fire failed; check staging hashes and that CPU1 was really offline |
 | `MISMATCH` from `idu_tool verify` | staging clobbered or truncated — re-copy `kit/*` from the host, re-run |
 | mainline panics on CPU1 (`bad PC value`) | `maxcpus=1` missing from the stock bootargs (`fw_printenv bootargs`) |
+| mainline comes up with one CPU (`cpus: 0`) | something onlined CPU1 in stock before the fire; the hook had to park it, and an AArch32 `CPU_OFF` cannot be revived by AArch64 PSCI.  Leave CPU1 alone in stock |
 | mainline: `System is deadlocked on memory` | DTB declares too little RAM — use the shipped `owrt_mem.dtb` (448 MB) |
 | mainline has no `root=` / drops to a panic | the DTB's `/chosen/bootargs` is not the merged one (`tools/make-dtb.sh`) |
 | `ssh: Connection refused` at 192.168.1.1 | you are talking to a different Airtel unit — check the MAC on your own link |

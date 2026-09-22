@@ -59,9 +59,19 @@ rm -f $KEY $BKEY
 
 # ---- fire ----
 for f in owrt_Image owrt_mem.dtb desc_blob.bin pty_owrt2.ko; do [ -e /tmp/$f ] || ln -sf $K/$f /tmp/$f; done
-echo 0 > /sys/devices/system/cpu/cpu1/online 2>/dev/null
-i=0; while [ "$(cat /sys/devices/system/cpu/online 2>/dev/null)" != "0" ] && [ $i -lt 24 ]; do sleep 0.5; i=$((i+1)); done
-log "online cpus: $(cat /sys/devices/system/cpu/online) (waited $i)"; sleep 2
+# Park the secondaries - but ONLY if one is actually running.  A core the 32-bit kernel
+# CPU_OFFs can never be revived by mainline's AArch64 PSCI (you get SMP=1), while a core left
+# *running* across the switch executes garbage, so an online core must be parked.  With
+# maxcpus=1 in the bootargs (what stock/install.sh sets) none of them ever runs: they stay in
+# reset and mainline brings both up.
+if [ "$(cat /sys/devices/system/cpu/online 2>/dev/null)" != "0" ]; then
+	log "secondaries online - parking them (mainline will come up with one core)"
+	for c in 1 2 3; do echo 0 > /sys/devices/system/cpu/cpu$c/online 2>/dev/null; done
+	i=0; while [ "$(cat /sys/devices/system/cpu/online 2>/dev/null)" != "0" ] && [ $i -lt 24 ]; do sleep 0.5; i=$((i+1)); done
+else
+	log "secondaries already in reset (maxcpus=1) - leaving them"
+fi
+log "online cpus: $(cat /sys/devices/system/cpu/online)"; sleep 2
 sync; echo 3 > /proc/sys/vm/drop_caches
 touch $C/handoff.fired; sync
 log "firing (uptime=$(cut -d. -f1 /proc/uptime)s)"
