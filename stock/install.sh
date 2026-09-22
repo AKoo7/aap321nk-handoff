@@ -59,6 +59,18 @@ EOH
 chmod +x /etc/rc.local
 grep -qF rootkeep /etc/crontabs/root 2>/dev/null || echo '* * * * * /configs/rootkeep.sh' >> /etc/crontabs/root
 
+echo "== 2b. root keeper (root + ssh on stock)"
+if [ -f "$C/rootkeep.sh" ]; then
+	echo "   keeper already present - leaving it alone"
+elif [ -f "$SRC/stock/rootkeep.sh" ]; then
+	cp -f "$SRC/stock/rootkeep.sh" "$C/rootkeep.sh"
+	chmod +x "$C/rootkeep.sh" 2>/dev/null || chmod 600 "$C/rootkeep.sh"
+	echo "   installed: it sets the stock root password to '${ROOTKEEP_PW:-Nok@123}' every minute"
+	echo "   (export ROOTKEEP_PW=... before running to use another password)"
+else
+	echo "   note: $SRC/stock/rootkeep.sh missing - root+ssh will not be re-applied each boot" >&2
+fi
+
 echo "== 3. persistent tarball (atomic build, verified)"
 # If the keeper is installed it rebuilds this every minute; build it once here so a fresh unit
 # is persistent immediately.  Never leave a half-written sysupgrade.tgz behind: the vendor's

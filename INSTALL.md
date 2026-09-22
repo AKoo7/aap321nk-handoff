@@ -4,8 +4,8 @@ Two halves, both idempotent: the **stock half** (hook + kit) and the **mainline 
 writer).  The installer leaves the hand-off *disarmed*; you arm it at the end.
 
 Throughout, `unit` = the AAP321NK's stock address (`root@192.168.1.1`; the stock root password is
-whatever `stock/rootkeep.sh` enforces — it defaults to a placeholder, set `ROOTKEEP_PW` before
-installing; mainline's image ships with an *empty* root password).
+what `stock/rootkeep.sh` enforces — `Nok@123` unless you export `ROOTKEEP_PW` — while mainline's
+image ships with an *empty* root password).
 
 ---
 
@@ -70,7 +70,9 @@ scp -O -r kit payload stock mainline root@unit:/tmp/      # scp -r will not crea
 ssh root@unit 'sh /tmp/stock/install.sh /tmp'
 ```
 
-What the installer does: copies the kit to `/opt/iduhandoff` (user_data), writes the
+What the installer does: copies the kit to `/opt/iduhandoff` (user_data), installs the root
+keeper (`/configs/rootkeep.sh`, which sets the stock root password to `${ROOTKEEP_PW:-Nok@123}`
+every minute — export `ROOTKEEP_PW` first to choose another), writes the
 `/etc/rc.local` launcher, appends the keeper line to `/etc/crontabs/root`, refreshes
 `/configs/sysupgrade.tgz` (this is what makes `/etc` survive a boot — see `docs/DESIGN.md`),
 appends `maxcpus=1` to the U-Boot `bootargs` (recording the original in
