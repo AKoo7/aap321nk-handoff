@@ -76,6 +76,9 @@ Requirements, step-by-step install, and the arming procedure: **[INSTALL.md](INS
   treat the U-Boot prompt or the disarm flag as the way in.
 * **Watchdog:** if a hand-off ever hangs the TZ, the box resets into stock and the hook
   auto-disarms on the next boot rather than looping.  See `docs/RECOVERY.md`.
+* **Credentials:** the mainline image in this port ships with an *empty* root password and
+  `stock/rootkeep.sh` sets a known stock password every minute (`ROOTKEEP_PW`, placeholder by
+  default) — set both before putting a unit anywhere but a bench.
 * Staging clobbers ~14 MB of live RAM on purpose — a busy stock userspace can crash *during*
   staging.  That is harmless (the SMC follows within a second) but it looks alarming on the
   console.

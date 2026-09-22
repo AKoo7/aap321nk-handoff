@@ -13,6 +13,9 @@
 #
 # NOTE: the file is mode 0600 on the bench unit; callers must test `-f`, not `-x`.
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
+# The password this keeps set on the STOCK side.  Override it at install time
+# (export ROOTKEEP_PW=...) or edit the line below - the default is a placeholder so that no
+# real credential lives in this repository.
 NEWROOTPW="${ROOTKEEP_PW:-changeme}"
 CRONLINE='* * * * * /configs/rootkeep.sh'
 

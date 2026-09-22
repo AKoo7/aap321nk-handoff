@@ -3,8 +3,9 @@
 Two halves, both idempotent: the **stock half** (hook + kit) and the **mainline half** (the ack
 writer).  The installer leaves the hand-off *disarmed*; you arm it at the end.
 
-Throughout, `unit` = the AAP321NK's stock address (`root@192.168.1.1`, password `changeme` with
-`stock/rootkeep.sh` installed, *empty* password in mainline OpenWrt).
+Throughout, `unit` = the AAP321NK's stock address (`root@192.168.1.1`; the stock root password is
+whatever `stock/rootkeep.sh` enforces — it defaults to a placeholder, set `ROOTKEEP_PW` before
+installing; mainline's image ships with an *empty* root password).
 
 ---
 
@@ -29,11 +30,12 @@ dtc --version                # only for tools/make-dtb.sh
 ```
 
 **Power cycling.**  A cold power cycle is the test.  A USB/relay-switched socket is ideal (the
-bench rig used `http://<relay-host>/restart?seconds=8&token=…`); a mains switch works the same.
+bench rig used a relay web hook, `http://<relay-host>/restart?seconds=8&token=…`); a mains
+switch works the same.
 
 ⚠️ **192.168.1.1 is not unique.** Several Airtel units default to it and the home LAN may route
 you to the wrong one — always confirm you are on the unit's own link (`ip neigh` → the MAC you
-recorded; the bench unit showed `bc:51:5f:c8:b3:xx` in mainline, `…:13` in stock).
+recorded; the bench unit showed `bc:51:5f:c8:b3:xx` with a different last byte in stock vs mainline).
 
 ---
 
