@@ -31,6 +31,7 @@ relay cutting power:
 | root | squashfs on `ubiblock0_1` + UBIFS `rootfs_data` as the **persistent** overlay (`mount_root: switching to ubifs overlay`), files survive power cycles |
 | SSH / web | `ssh root@192.168.1.1` (empty password), LuCI on `:80` |
 | loop | self-sustaining: mainline bumps a counter in `/configs`, the stock hook re-arms on a bump and auto-disarms if a fire never landed |
+| scripts | the shipped ones were run against the unit: `stock/install.sh` (hashes verified) → `stock/fire-once.sh` → `mainline/install.sh` → arm → cold cycle → mainline `cpus=0-1`, counter bumped |
 
 ## How it works
 

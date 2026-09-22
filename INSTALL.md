@@ -43,9 +43,12 @@ The 13.8 MB kernel is **not** shipped: extract it from the unit's own slot-B `ke
 take it from your OpenWrt build).
 
 ```sh
-# 1. dump slot B's kernel volume on the unit
-ssh root@unit 'D=$(ubiattach -m 19 2>&1 | sed -n "s/.*UBI device number \([0-9]*\).*/\1/p"); \
-               dd if=/dev/ubi${D}_0 of=/tmp/slotb_kvol.bin bs=4096 2>/dev/null; ubidetach -d $D'
+# 1. dump slot B's kernel volume (works from stock or mainline; reuses an existing attach)
+ssh root@unit 'M=19; D=$(ubiattach -m $M 2>&1 | sed -n "s/.*UBI device number \([0-9]*\).*/\1/p"); \
+  [ -n "$D" ] || for u in /sys/class/ubi/ubi[0-9]*; do [ -r "$u/mtd_num" ] && \
+    [ "$(cat $u/mtd_num)" = "$M" ] && D=${u##*/ubi}; done; echo "volumes on ubi$D:"; \
+  ls /sys/class/ubi/ubi${D}_*/name | while read v; do echo "  $v -> $(cat $v)"; done; \
+  dd if=/dev/ubi${D}_0 of=/tmp/slotb_kvol.bin bs=4096 2>/dev/null; ls -l /tmp/slotb_kvol.bin'
 scp -O root@unit:/tmp/slotb_kvol.bin /tmp/
 
 # 2. pull the arm64 Image out of the FIT
@@ -81,13 +84,14 @@ Expect the SSH session to die and, on the serial console:
 
 ```
 hand-off in 4 s - press Ctrl-C for stock
-online cpus: 0 (waited 0)
-staged owrt_Image  -> 0x44000000  13836296 bytes
-staged owrt_mem.dtb -> 0x48c00000  27078 bytes
-staged desc_blob.bin -> 0x48d00000  80 bytes
-image         0x44000000: ok
-dtb           0x48c00000: ok
-descriptor    0x48d00000: ok
+secondaries already in reset (maxcpus=1) - leaving them alone
+online cpus: 0
+staged /tmp/owrt_Image        -> 0x44000000  13836296 bytes
+staged /tmp/owrt_mem.dtb      -> 0x48c00000  27078 bytes
+staged /tmp/desc_blob.bin     -> 0x48d00000  80 bytes
+image          0x44000000: ok
+dtb            0x48c00000: ok
+descriptor     0x48d00000: ok
 firing...
 [    0.000000] Booting Linux on physical CPU 0x0000000000
 [    0.000000] Linux version 6.12.92 (…) aarch64
