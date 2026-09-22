@@ -1,0 +1,32 @@
+#!/bin/sh /etc/rc.common
+# Runs early in mainline boot; bumps /configs/handoff.ack on the vendor "cfg" UBI volume.
+# The stock-side hook uses that counter as proof the hand-off landed: unchanged => the fire
+# hung the TZ (watchdog reset) => auto-disarm instead of looping.
+START=00
+
+boot() {
+	M=$(awk -F'"' '$2=="cfg"{sub("mtd","",$1); sub(":.*","",$1); print $1; exit}' /proc/mtd)
+	[ -n "$M" ] || { echo "handoff-ack: no cfg partition" > /dev/kmsg; return 0; }
+	OWN=1
+	D=$(ubiattach -m "$M" 2>/dev/null | sed -n 's/.*UBI device number \([0-9]*\).*/\1/p')
+	if [ -z "$D" ]; then			# already attached by someone else? reuse it
+		OWN=0
+		for u in /sys/class/ubi/ubi[0-9]*; do
+			[ -r "$u/mtd_num" ] || continue
+			[ "$(cat "$u/mtd_num")" = "$M" ] && D=${u##*/ubi}
+		done
+	fi
+	[ -n "$D" ] || { echo "handoff-ack: no ubi device for mtd$M" > /dev/kmsg; return 0; }
+	mkdir -p /mnt/cfg
+	if mount -t ubifs "ubi${D}:cfg" /mnt/cfg 2>/dev/null || mount -t ubifs "ubi${D}_0" /mnt/cfg 2>/dev/null; then
+		N=$(cat /mnt/cfg/handoff.ack 2>/dev/null | tr -dc 0-9); N=${N:-0}
+		echo $((N+1)) > /mnt/cfg/handoff.ack
+		sync
+		umount /mnt/cfg
+		echo "handoff-ack: bumped to $((N+1))" > /dev/kmsg
+	else
+		echo "handoff-ack: mount of ubi${D}:cfg failed" > /dev/kmsg
+	fi
+	[ "$OWN" = 1 ] && ubidetach -d "$D" 2>/dev/null
+	return 0
+}
