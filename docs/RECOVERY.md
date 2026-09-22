@@ -3,16 +3,20 @@
 Nothing in this kit writes a signed partition, so there is no brick state to recover from: the
 unit can always be made to boot stock again.  The ladder, cheapest first.
 
-## 1. The 4-second window (normal escape)
+## 1. The 4-second window (best effort, not the normal escape)
 
 On every cold boot the hook prints
 
 ```
-iduhandoff: booting Mainline OpenWrt in 4s - press a key for stock
+iduhandoff: handing off to mainline in 4s (disarm: touch /configs/handoff.off)
 ```
 
-Type anything on the serial console (or press a button on the unit, if the payload's input devices
-see it) and it boots stock **and disarms** (`/configs/handoff.off` is created).
+and watches the console for a keypress.  On this unit that almost never fires: serial input is not
+broadcast — the vendor's console owner consumes every byte once stock is up, so a second reader sees
+nothing (`dd`, `read` and `cat` all measured 0 bytes while the tty still echoed the characters).
+It does work while the console is free (failsafe, very early boot).  Use §2 or §4 instead, and note
+the hook is careful about the window: `read -t` never times out on this busybox (v1.35.0), so the
+window is a `sleep` with a killer child — otherwise the box would silently stop firing.
 
 ## 2. Disarm from either side
 

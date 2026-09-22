@@ -2,6 +2,6 @@
 888eeebfb2038b8dfa0295194d837042  kit/owrt_mem.dtb
 70efe97ba0dfd18960c73ca21f8ec72a  kit/desc_blob.bin
 9e30e1e8efef6d12a54ad823a6ac00be  payload/pty_owrt2.ko
-9fa54ccc9e13a408cc07f6d7f84c865d  stock/handoff.sh
+774469d5a21323cd3bc0cbbcd4471087  stock/handoff.sh
 # extracted per INSTALL.md phase 1 (not shipped, 13.8 MB):
 # 8da349d50ac5cba1c0d9600903c1f2be  kit/owrt_Image

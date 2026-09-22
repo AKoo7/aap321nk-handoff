@@ -113,11 +113,16 @@ mainline's `mkfs.ubifs` formats `rootfs_data` with **zstd**, and the vendor's 5.
 zstd — `UBIFS error: compressor "zstd" is not compiled in` — so stock cannot read mainline's
 overlay at all.
 
-Two traps found the hard way, both encoded in the scripts:
+Traps found the hard way, all encoded in the scripts:
 
 * `dmesg | grep -i watchdog` is **not** a failure signature on this box: stock's normal boot logs
   `procd: - watchdog -`, so a v5 hook disarmed itself after every successful fire and the
   hand-off "randomly stopped working".
+* Serial input is **not** broadcast: with stock up, the vendor's console owner consumes every byte
+  (`dd`/`read`/`cat` all get 0 while the tty echoes), so a keystroke escape only works while the
+  console is free.  Relatedly, `read -t N < /dev/console` never times out on this busybox
+  (v1.35.0) — the hook would block in the tty read and never fire again — so the window is a
+  `sleep` with killer children.
 * A truncated `/configs/sysupgrade.tgz` is fatal and invisible: the vendor's restore does
   `tar … && rm`, which never removes a corrupt archive, so the hook (and root+ssh) silently never
   comes back.  Build the tarball to `.new`, verify with `tar tzf`, then `mv`.

@@ -61,8 +61,8 @@ md5sum -c MANIFEST.md5
 ## Phase 2 — stock half, and a test fire
 
 ```sh
-scp -O -r kit payload stock mainline root@unit:/tmp/kit/
-ssh root@unit 'sh /tmp/kit/stock/install.sh /tmp/kit'
+scp -O -r kit payload stock mainline root@unit:/tmp/      # scp -r will not create /tmp/kit for you
+ssh root@unit 'sh /tmp/stock/install.sh /tmp'
 ```
 
 What the installer does: copies the kit to `/opt/iduhandoff` (user_data), writes the
@@ -74,7 +74,7 @@ appends `maxcpus=1` to the U-Boot `bootargs` (recording the original in
 Fire it once by hand — this is the whole mechanism, minus rc.local:
 
 ```sh
-ssh root@unit 'sh /tmp/kit/stock/fire-once.sh'
+ssh root@unit 'sh /tmp/stock/fire-once.sh'
 ```
 
 Expect the SSH session to die and, on the serial console:
@@ -108,8 +108,8 @@ Then `ssh root@unit 'uname -m'` → `aarch64`.
 The mainline root is a different filesystem, so copy the mainline half again:
 
 ```sh
-scp -O -r mainline root@unit:/tmp/kit/
-ssh root@unit 'sh /tmp/kit/mainline/install.sh /tmp/kit'
+scp -O -r mainline root@unit:/tmp/
+ssh root@unit 'sh /tmp/mainline/install.sh /tmp'
 ```
 
 It installs `/etc/init.d/handoff-ack` + `S00` symlink, runs it once, and prints the counter it
@@ -138,7 +138,7 @@ Now cut the power cold and let it run, hands off.  In stock you should see:
 [iduhandoff] rc.local RAN
 [iduhandoff] /configs visible -> starting keeper
 [iduhandoff] running hook
-iduhandoff: booting Mainline OpenWrt in 4s - press a key for stock
+iduhandoff: handing off to mainline in 4s (disarm: touch /configs/handoff.off)
 iduhandoff: handing off to mainline arm64 OpenWrt...
 ```
 
@@ -155,7 +155,7 @@ Run `sh stock/verify.sh` on either side for a full state dump (flags, counter, h
 
 | action | effect |
 |---|---|
-| any key during the 4 s window | boots stock **and** disarms |
+| any key during the 4 s window | disarms — best effort only: with stock up the vendor's console owner eats the input (works in failsafe/early boot) |
 | `touch /configs/handoff.off` (either side) | disarm; later boots stay in stock |
 | `rm /configs/handoff.off` | arm again |
 | a fire that never reaches mainline | auto-disarm (no reset loop) |

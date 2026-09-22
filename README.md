@@ -15,7 +15,7 @@ in stock.
 cold power cycle
    └─ PBL → SBL1 → U-Boot (signed, untouched) → vendor OpenWrt 19.07 / Linux 5.4.213   ~60 s
         └─ /etc/rc.local (restored from /configs/sysupgrade.tgz) → /opt/iduhandoff/handoff.sh
-             ├─ check the ack counter / disarm flag, offer a 4 s "press a key for stock" window
+             ├─ check the ack counter / disarm flag, 4 s window, then park CPU1
              ├─ park CPU1, stage Image+DTB+descriptor into RAM, drop caches
              └─ insmod the spliced vehicle → cpsid if + cache flush + SMC 0x0200010F
                   └─ TZ switches core 0 to AArch64 → mainline OpenWrt 6.12.92 (arm64)
@@ -68,8 +68,11 @@ Requirements, step-by-step install, and the arming procedure: **[INSTALL.md](INS
 
 * **Nothing signed is written.** The kit stages into RAM only; the U-Boot env change is one
   appended word (`maxcpus=1`) and `$C/bootargs.orig` records the original.
-* **Escape:** press a key during the 4 s window (boots stock *and* disarms), or from either side
-  `touch /configs/handoff.off`.  Re-arm with `rm /configs/handoff.off`.
+* **Escape:** `touch /configs/handoff.off` — from stock, from mainline, or from the failsafe
+  shell (`docs/RECOVERY.md`); later boots then stay in stock.  Re-arm with `rm`.  A keypress in
+  the 4 s window also disarms, but only while the console is free: once stock is up the vendor's
+  console owner consumes every byte (measured — `dd`/`read`/`cat` see 0 while the tty echoes), so
+  treat the U-Boot prompt or the disarm flag as the way in.
 * **Watchdog:** if a hand-off ever hangs the TZ, the box resets into stock and the hook
   auto-disarms on the next boot rather than looping.  See `docs/RECOVERY.md`.
 * Staging clobbers ~14 MB of live RAM on purpose — a busy stock userspace can crash *during*
