@@ -2,8 +2,8 @@
 # Install the AAP321NK cold-boot hand-off (stock half).
 # Run ON THE UNIT as root while STOCK is running.  Idempotent.
 #
-#   scp -O -r kit payload stock mainline root@192.168.1.1:/tmp/kit/     # from the host
-#   ssh root@192.168.1.1 '/tmp/kit/stock/install.sh /tmp/kit'
+#   scp -O -r kit payload stock mainline root@192.168.1.1:/tmp/    # from the host
+#   ssh root@192.168.1.1 'sh /tmp/stock/install.sh /tmp'
 #
 # The hand-off is left DISARMED: arm it only after the mainline half is installed
 # (INSTALL.md phase 2 -> `rm /configs/handoff.off`).

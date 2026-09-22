@@ -2,7 +2,7 @@
 # Fire the hand-off once, by hand, from STOCK.  Same sequence the hook uses; useful as the
 # phase-1 test (it does not touch /configs/handoff.fired, so the hook's ack logic is unaffected).
 #
-#   ssh root@192.168.1.1 'sh /tmp/kit/stock/fire-once.sh'
+#   ssh root@192.168.1.1 'sh /tmp/stock/fire-once.sh'
 #
 # On success this does not return: the TZ switches the calling core to AArch64 and mainline
 # boots (~10 s).  On failure the box resets and stock comes back.

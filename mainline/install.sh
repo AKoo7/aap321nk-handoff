@@ -3,8 +3,8 @@
 # That counter is how the stock-side hook knows a hand-off landed (see docs/DESIGN.md).
 #
 # Run ON THE UNIT while MAINLINE OpenWrt is running:
-#   scp -O -r mainline root@192.168.1.1:/tmp/kit/
-#   ssh root@192.168.1.1 'sh /tmp/kit/mainline/install.sh /tmp/kit'
+#   scp -O -r mainline root@192.168.1.1:/tmp/
+#   ssh root@192.168.1.1 'sh /tmp/mainline/install.sh /tmp'
 set -u
 SRC=${1:-/tmp/kit}
 [ "$(uname -m)" = "aarch64" ] || echo "warning: $(uname -m) - this half belongs on mainline (aarch64)"
