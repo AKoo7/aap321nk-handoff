@@ -8,7 +8,7 @@
 # The hand-off is left DISARMED: arm it only after the mainline half is installed
 # (INSTALL.md phase 2 -> `rm /configs/handoff.off`).
 set -eu
-SRC=${1:-/tmp/kit}
+SRC=${1:-/tmp}
 K=/opt/iduhandoff
 C=/configs
 

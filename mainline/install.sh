@@ -6,7 +6,7 @@
 #   scp -O -r mainline root@192.168.1.1:/tmp/
 #   ssh root@192.168.1.1 'sh /tmp/mainline/install.sh /tmp'
 set -u
-SRC=${1:-/tmp/kit}
+SRC=${1:-/tmp}
 [ "$(uname -m)" = "aarch64" ] || echo "warning: $(uname -m) - this half belongs on mainline (aarch64)"
 
 cp -f "$SRC/mainline/handoff-ack" /etc/init.d/handoff-ack || exit 1
