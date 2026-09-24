@@ -133,6 +133,46 @@ boot bumps `/configs/handoff.ack`; that bump is the only proof the stock hook ac
 
 ---
 
+## Phase 3.5 — the unit's 5G WAN identity (per unit, optional)
+
+The image ships **no** identity: the 5G WAN bring-up (Airtel ODU "ODCPE lock" + PPPoE) needs a
+*matched set* — the account's PPPoE creds plus the IDU SN/MACs that account is bound to — and
+that is per-unit data, so it can never live in an image.  Without one, the daemon stays idle and
+the WAN keeps its default (dhcp) configuration; the hand-off itself is unaffected.
+
+```sh
+cp identity/odcpe.local.conf.example identity/odcpe.conf   # gitignored
+$EDITOR identity/odcpe.conf                                # fill in the matched set
+```
+
+`mainline/install.sh` copies it to `/etc/odcpe/odcpe.local.conf` when it sees it.  The scripts
+read the identity from the first of:
+
+| # | path | notes |
+|---|---|---|
+| 1 | `$ODCPE_IDENTITY_FILE` | if the caller exports it |
+| 2 | `/mnt/cfg/odcpe.conf` | the vendor **cfg** UBI volume — survives a mtd19 reflash; also visible to stock |
+| 3 | `/etc/odcpe/odcpe.local.conf` | mainline's persistent overlay — **wiped by a reflash** |
+
+Put it at `/mnt/cfg/odcpe.conf` for a unit you intend to reflash:
+
+```sh
+scp -O identity/odcpe.conf root@unit:/tmp/
+ssh root@unit 'M=$(awk -F\" "\$2==\"cfg\"{sub(\"mtd\",\"\",\$1);sub(\":.*\",\"\",\$1);print \$1;exit}" /proc/mtd); \
+  D=$(ubiattach -m $M 2>&1 | sed -n "s/.*UBI device number \([0-9]*\).*/\1/p"); mkdir -p /mnt/cfg; \
+  mount -t ubifs ubi${D}:cfg /mnt/cfg && cp /tmp/odcpe.conf /mnt/cfg/odcpe.conf && sync && \
+  umount /mnt/cfg && ubidetach -d $D'
+```
+
+Then `/etc/init.d/odcpe-wan restart` (it re-applies the WAN config itself if the identity arrived
+after first boot).  Log: `logread -e odcpe-wan`.
+
+⚠️ Never commit a filled-in `identity/odcpe.conf` and never build one into an image or a
+`factory.ubi` — a flashed `.ubi` carrying a bench unit's identity puts that unit's account on
+someone else's hardware.
+
+---
+
 ## Phase 4 — arm it and verify a cold cycle
 
 ```sh
@@ -193,3 +233,5 @@ sh mainline/uninstall.sh
 | mainline has no `root=` / drops to a panic | the DTB's `/chosen/bootargs` is not the merged one (`tools/make-dtb.sh`) |
 | `ssh: Connection refused` at 192.168.1.1 | you are talking to a different Airtel unit — check the MAC on your own link |
 | mainline booted but `/etc` changes vanish | overlay not mounted (`mount \| grep overlay`); the volume must be `ubi0:2 rootfs_data` |
+| mainline: WAN stays on dhcp, `logread -e odcpe-wan` says *no identity configured* | expected on a fresh install — add the unit's identity (phase 3.5); afterwards `/etc/init.d/odcpe-wan restart` |
+| mainline: `wan` is pppoe but never dials | no ODU lock: check `wanctrl` has a 192.168.0.x lease (`ifstatus wanctrl`) and that the identity's MACs match the account's ODU |

@@ -1,0 +1,20 @@
+# The unit's 5G WAN identity (Airtel ODU "ODCPE lock" + PPPoE) — TEMPLATE.
+#
+# Copy to `identity/odcpe.conf` (gitignored) and fill in the MATCHED SET for this
+# unit: the account's PPPoE creds plus the IDU SN/MACs that account is bound to.
+# mainline/install.sh copies it to the unit as /etc/odcpe/odcpe.local.conf.
+#
+# NEVER commit a filled-in copy and never bake it into an image or a factory.ubi:
+# the OpenWrt images ship only placeholder defaults, so an image can be handed to
+# anyone.  To survive a mtd19 reflash, put the same file at /mnt/cfg/odcpe.conf
+# on the unit instead (the vendor "cfg" UBI volume, mounted at boot).
+#
+# With no identity installed the daemon stays idle and the WAN keeps its default
+# (dhcp) configuration — the hand-off itself does not need one.
+
+ODCPE_ENABLED=1
+ODCPE_SN=YOUR_IDU_SN
+ODCPE_WAN_MAC=aa:bb:cc:dd:ee:00
+ODCPE_CTRL_MAC=aa:bb:cc:dd:ee:01
+ODCPE_PPP_USER=YOUR_ACCOUNT_wifi@airtelbroadband.in
+ODCPE_PPP_PASS=YOUR_PASSWORD

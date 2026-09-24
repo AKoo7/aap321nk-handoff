@@ -39,6 +39,24 @@ else
 	echo "  ubiattach -m $M failed"
 fi
 
+# == optional: the unit's 5G WAN identity (ODCPE lock + PPPoE) ==
+# Images carry no identity on purpose (see identity/odcpe.local.conf.example);
+# without this the hand-off still works and the WAN simply stays on dhcp.
+if [ -f "$SRC/identity/odcpe.conf" ]; then
+	cp -f "$SRC/identity/odcpe.conf" /etc/odcpe/odcpe.local.conf || exit 1
+	chmod 600 /etc/odcpe/odcpe.local.conf
+	echo "identity installed: /etc/odcpe/odcpe.local.conf"
+	if [ -x /etc/init.d/odcpe-wan ]; then
+		/etc/init.d/odcpe-wan enable
+		/etc/init.d/odcpe-wan start
+		sleep 2
+		logread -e odcpe-wan 2>/dev/null | tail -3
+		echo "  (to also survive a mtd19 reflash, copy the same file to /mnt/cfg/odcpe.conf)"
+	fi
+else
+	echo "no identity/odcpe.conf in $SRC - the 5G WAN stays unconfigured (see INSTALL.md)"
+fi
+
 sync
 echo
 echo "mainline half installed.  Back in stock: rm /configs/handoff.off to arm the hand-off."
