@@ -12,7 +12,7 @@ Written while reverse-engineering one bench unit (Nokia/Airtel AAP321NK, IPQ5018
 | `payload/pj_owrt2.s` / `.bin` | — / 164 B | cache-flush + SMC payload |
 | `payload/exitnop.s` | — | 8-byte `mov r0,#0; bx lr` exit stub |
 | `kit/desc_blob.bin` | `70efe97ba0dfd18960c73ca21f8ec72a` | 80-byte descriptor |
-| `kit/owrt_mem.dts` / `owrt_mem.dtb` | — / `888eeebfb2038b8dfa0295194d837042` | port DTS with `/memory` = 448 MB and the merged `/chosen/bootargs`; the `.dtb` rebuilds byte-identically with dtc 1.6.x (`tools/make-dtb.sh`) |
+| `kit/owrt_mem.dtb` (slot B) / `owrt_mem.slotA.dtb` | `25788e43ac5bf3e1f62b84a7b0ebc047` / `1bd363de013324b09f0ffe40d09a0c90` | **mainline** DTB — 172 nodes, `ethernet@39c00000`/`ethernet@39d00000`, 448 MB `/memory`, merged `/chosen/bootargs`; the two differ only in `ubi.mtd=rootfs_1` vs `rootfs`. `kit/owrt_mem.dts` is a **reference dump** of the slot-B blob — never recompile it (the old vendor-flavoured pair gave a kernel with **no Ethernet**). |
 | `stock/handoff.sh`, `stock/rootkeep.sh`, `stock/*.sh` | `9fa54ccc…` (hook) | the hook and helpers |
 | `mainline/handoff-ack`, `mainline/install.sh` | — | ack writer |
 | `tools/*` | — | extractor, splicer, console client |

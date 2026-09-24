@@ -41,8 +41,35 @@ check() { # check <file> <md5>
 echo "== kit in $K =="
 if [ -d "$K" ]; then
 	check "$K/idu_tool"     88e3954177b6451ee5d3a6a6a8af78f3
-	check "$K/owrt_Image"   8da349d50ac5cba1c0d9600903c1f2be
-	check "$K/owrt_mem.dtb" 888eeebfb2038b8dfa0295194d837042
+	# owrt_Image is per-unit by design (extracted from the slot you flashed, §2c), so it is NOT
+	# hash-checked — verify it is an arm64 kernel Image instead (magic "ARM\x64" at offset 56).
+	if [ -e "$K/owrt_Image" ]; then
+		magic=$(dd if="$K/owrt_Image" bs=1 skip=56 count=4 2>/dev/null)
+		if [ "$magic" = "ARMd" ]; then
+			printf '  %-20s ok (arm64 Image %s B, md5 %s)\n' owrt_Image \
+				"$(wc -c < "$K/owrt_Image")" "$(md5sum "$K/owrt_Image" | cut -c1-8)"
+		else
+			printf '  %-20s BAD: not an arm64 Image (magic=%s) - re-run §2c\n' owrt_Image "$magic"
+		fi
+	else
+		printf '  %-20s MISSING (extract it from the slot: docs §2c)\n' owrt_Image
+	fi
+	# The hand-off DTB must come from the MAINLINE tree.  A vendor-flavoured DTB (ess-switch /
+	# nss-dp nodes, no ethernet@) boots a kernel with NO Ethernet at all — that is a trap we hit
+	# for real (no ipq5018-gmac-dwmac probe, PHY "failed to get and enable RX clock", only `lo`).
+	dtbchk() { # dtbchk <dtb> [label]
+		[ -e "$1" ] || return 0
+		why=""
+		grep -q 'ethernet@39c00000' "$1" 2>/dev/null || why="lacks the mainline ethernet@39c00000 node"
+		grep -q 'ess-switch' "$1" 2>/dev/null && why="${why:+$why; }has vendor ess-switch nodes"
+		if [ -z "$why" ]; then
+			printf '  %-20s ok (mainline DTB %s, %s)\n' "${1##*/}" "$(md5sum "$1" | cut -c1-8)" "${2:-}"
+		else
+			printf '  %-20s BAD: %s -> no Ethernet will come up\n' "${1##*/}" "$why"
+		fi
+	}
+	dtbchk "$K/owrt_mem.dtb" slot-B
+	dtbchk "$K/owrt_mem.slotA.dtb" slot-A
 	check "$K/desc_blob.bin" 70efe97ba0dfd18960c73ca21f8ec72a
 	check "$K/pty_owrt2.ko" 9e30e1e8efef6d12a54ad823a6ac00be
 	check "$K/handoff.sh"   d3abeb2036e1765b1579187fc69db30d

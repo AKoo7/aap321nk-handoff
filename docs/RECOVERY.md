@@ -90,6 +90,11 @@ mv /tmp/c/sysupgrade.tgz.new /tmp/c/sysupgrade.tgz && sync
 
 * **Both cores up but the box wedges** — the stock side booted without `maxcpus=1`
   (`fw_printenv bootargs`); fix it in stock.
+* **It boots but has NO Ethernet (only `lo`)** — the hand-off DTB is vendor-flavoured: no
+  `ipq5018-gmac-dwmac` probe, the PHY logs `failed to get and enable RX clock`, and an
+  `mdio_…: deferred probe` line appears. Check with `sh tools/make-dtb.sh check <dtb>` and use
+  the shipped `kit/owrt_mem{.slotA,}.dtb` — **never a DTB recompiled from `owrt_mem.dts`**
+  (that source is the stale vendor tree: `ess-switch`/`nss-dp`, no `ethernet@`).
 * **`rootfs_data` will not mount in stock** — expected, it is zstd-formatted by mainline
   (`UBIFS error: compressor "zstd" is not compiled in`).  Mainline itself is fine.
 * **Want mainline's overlay gone** (fresh config): in mainline `ubirmvol` / reformat from

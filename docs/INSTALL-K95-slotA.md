@@ -19,7 +19,7 @@ this is a from-scratch install, not a repair.
 | Mgmt IP | `192.168.1.1` | **`192.168.18.1`** | it was locally factory-reset & un-provisioned; SSH/relay here |
 | Firmware | JJM.I34 (2025-05) | **HJL.K95p02 (2024-09)** — older | keep *its own* stock images; see §Anti-rollback |
 | Active boot slot | **A** | **B** (BOOTCONFIG all attrs=1) | OpenWrt must go in the **inactive** slot = **A / `mtd18` / `rootfs`** |
-| Hand-off DTB bootargs | `ubi.mtd=rootfs_1 … ubiblock0_1` | **`ubi.mtd=rootfs … ubiblock0_1`** | one-token edit to `owrt_mem.dts` (§2) |
+| Hand-off DTB bootargs | `ubi.mtd=rootfs_1 … ubiblock0_1` | **`ubi.mtd=rootfs … ubiblock0_1`** | shipped `kit/owrt_mem.slotA.dtb` — or `sh tools/make-dtb.sh slotA` (§2; **never** a recompiled `.dts`) |
 | QSEE / TZ (mtd4) | reference | **code byte-identical** (only re-signed) | kit `idu_tool`/`desc_blob`/addresses port **verbatim** — no re-RE |
 | Root | installed | **installed & running** (packaged `rootkeep.sh`, owner key + `Nok@123`) | you already have the shell you need |
 
@@ -82,23 +82,26 @@ as before. Slot A now holds OpenWrt but nothing boots it yet.
 
 ---
 
-## 2 — Patch the kit for **slot A**, then build the matched artifacts (on the host)
+## 2 — Point the kit at **slot A** and build the matched artifacts (on the host)
 
-Only the DTB command line changes (attach `rootfs` instead of `rootfs_1`; the volume id stays `1`
-because our OpenWrt UBI is the only one attached → `ubi0`, vol 1 = `rootfs`). The `owrt_Image`
-kernel is **extracted from what you just flashed**, so kernel and rootfs are guaranteed same-build.
+⚠ **The DTB must stay a MAINLINE DTB.** `kit/owrt_mem.dtb` (slot B) and `kit/owrt_mem.slotA.dtb`
+(slot A) are the same 172-node mainline tree — both carry `ethernet@39c00000`/`ethernet@39d00000`
+and the 448 MB `/memory`; they differ **only** in the `/chosen/bootargs` token (`ubi.mtd=rootfs_1`
+vs `ubi.mtd=rootfs`). **Never rebuild the DTB from `kit/owrt_mem.dts`** — that `.dts` is only a
+reference dump, and a recompiled/stale one brings the *vendor* `ess-switch`/`nss-dp` nodes with it,
+after which the mainline kernel binds **no Ethernet at all**: no `ipq5018-gmac-dwmac` probe, the PHY
+logs `failed to get and enable RX clock`, an `mdio_…: deferred probe` line, and the unit comes up
+with `lo` only. Patch the bootargs in the *blob* instead (`fdtput`), which touches nothing else.
 
 ```sh
 cd ~/aap321nk-handoff
-cp kit/owrt_mem.dts kit/owrt_mem.dts.bench-bak
 
-# 2a. slot-A bootargs (rootfs_1 -> rootfs); everything else identical
-sed -i 's/ubi\.mtd=rootfs_1/ubi.mtd=rootfs/' kit/owrt_mem.dts
-grep -n 'ubi.mtd=' kit/owrt_mem.dts
-#   -> ubi.mtd=rootfs root=/dev/ubiblock0_1 rootfstype=squashfs rootwait …   (448 MB /memory unchanged)
+# 2a. select the slot-A DTB (this IS the "bootargs edit" — prebuilt, byte-verified)
+cp kit/owrt_mem.slotA.dtb kit/owrt_mem.dtb
+sh tools/make-dtb.sh check kit/owrt_mem.dtb      # must print: slot rootfs ... ok
+#   regenerate if ever needed:  sh tools/make-dtb.sh slotA     (cp + fdtput; no recompile)
 
-# 2b. rebuild the DTB (md5 will differ from the shipped 888eeebf — expected: bootargs edit + dtc 1.7.2; the boot does not care)
-sh tools/make-dtb.sh || dtc -I dts -O dtb -f -o kit/owrt_mem.dtb kit/owrt_mem.dts
+# 2b. (nothing to rebuild — there is deliberately no dtc/dts step; see the warning above)
 
 # 2c. extract the matching arm64 Image FROM slot A's kernel volume (guarantees kernel==rootfs build)
 U=root@192.168.18.1
@@ -161,9 +164,13 @@ stock, see `~/aap321nk-handoff/docs/RECOVERY.md` (check staging hashes and that 
 `bootargs`).
 
 Watch for these unit-specific failure signatures:
-- `System is deadlocked on memory` → wrong DTB (must be the 448 MB `owrt_mem.dtb` from §2b).
-- panics with `no root=` / can't mount → the bootargs edit didn't take; confirm §2a shows
-  `ubi.mtd=rootfs` and the dtb was rebuilt.
+- `System is deadlocked on memory` → wrong DTB (must be the 448 MB one from §2).
+- **boots with only `lo` — no `eth*`/`lan1`/`br-lan`** → vendor-flavoured DTB: the kernel never
+  probes `ipq5018-gmac-dwmac`, the PHY logs `failed to get and enable RX clock`, and an
+  `mdio_…: deferred probe` line appears. Diagnose with `sh tools/make-dtb.sh check <dtb>` and fix
+  by using the shipped `kit/owrt_mem.slotA.dtb` (never a recompiled one).
+- panics with `no root=` / can't mount → the bootargs token didn't take; confirm
+  `sh tools/make-dtb.sh check kit/owrt_mem.dtb` prints `slot rootfs`.
 - mainline mounts but overlay changes vanish → `mount | grep overlay` must show `ubi0:2
   rootfs_data`; if the overlay volume is missing, `rootfs_data` didn't format (re-flash §1).
 
@@ -179,6 +186,28 @@ ssh root@192.168.18.1 'sh /tmp/mainline/install.sh /tmp'
 
 Installs `/etc/init.d/handoff-ack` (S00) into the persistent overlay; every mainline boot bumps
 `/configs/handoff.ack`, which is the only proof the stock hook accepts to re-arm.
+
+---
+
+## 5.1 — Her ODCPE identity (do this before serving)
+
+The flashed image ships a **placeholder** `odcpe.conf` (`ODCPE_ENABLED=0`) — no unit identity, by
+design, so the images stay publishable (see `INSTALL.md`). This unit needs **her own** matched set
+(SN + WAN/ctrl MACs + PPPoE user/password) — never the bench unit's. Put it on the vendor `cfg`
+volume (mainline mounts it at `/mnt/cfg`; the loader reads that path first and also accepts
+mainline's own overlay):
+
+```sh
+ssh root@192.168.18.1 'ubiattach -m 15 >/dev/null 2>&1; mkdir -p /mnt/cfg
+  mount -t ubifs ubi1:cfg /mnt/cfg 2>/dev/null || mount -t ubifs ubi0:cfg /mnt/cfg'
+ssh root@192.168.18.1 'cat > /mnt/cfg/odcpe.conf' < /path/to/her-odcpe.conf   # ODCPE_ENABLED=1 + her fields
+ssh root@192.168.18.1 'grep -E "^ODCPE_(ENABLED|SN|PPP_USER)=" /mnt/cfg/odcpe.conf; sync'
+ssh root@192.168.18.1 '/etc/init.d/odcpe-wan restart'                        # apply it now
+```
+
+Start from `identity/odcpe.local.conf.example` in this repo. Keep the filled file **out of git**
+(`identity/odcpe.conf` is gitignored) and out of every image. It survives a rootfs reflash because
+it lives on `cfg` (mtd15), not in the OpenWrt rootfs.
 
 ---
 

@@ -58,7 +58,7 @@ Requirements, step-by-step install, and the arming procedure: **[INSTALL.md](INS
 
 | path | what |
 |---|---|
-| `kit/` | staged artifacts: `idu_tool` (+ source), the 448 MB `owrt_mem.dtb` (+ `.dts`), `desc_blob.bin` |
+| `kit/` | staged artifacts: `idu_tool` (+ source), the 448 MB mainline DTB — `owrt_mem.dtb` (slot B) + `owrt_mem.slotA.dtb` (slot A) + the `.dts` reference dump (`tools/make-dtb.sh` checks/patches them) — and `desc_blob.bin` |
 | `payload/` | the ARM asm payload, the exit stub, and the spliced `pty_owrt2.ko` vehicle |
 | `stock/` | run-on-the-unit: `install.sh`, `fire-once.sh`, `verify.sh`, `uninstall.sh`, `handoff.sh` (the hook), `rootkeep.sh` |
 | `mainline/` | the arm64 half: `handoff-ack` (S00 ack writer) + `install.sh` |

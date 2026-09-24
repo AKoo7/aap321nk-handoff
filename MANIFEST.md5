@@ -1,5 +1,8 @@
 88e3954177b6451ee5d3a6a6a8af78f3  kit/idu_tool
-888eeebfb2038b8dfa0295194d837042  kit/owrt_mem.dtb
+# hand-off DTBs (MAINLINE tree: ethernet@39c00000/39d00000 present, no vendor ess-switch/nss-dp
+# nodes; 448 MB /memory; only /chosen/bootargs differs between the two):
+25788e43ac5bf3e1f62b84a7b0ebc047  kit/owrt_mem.dtb           # slot B — ubi.mtd=rootfs_1
+1bd363de013324b09f0ffe40d09a0c90  kit/owrt_mem.slotA.dtb     # slot A — ubi.mtd=rootfs  (K95)
 70efe97ba0dfd18960c73ca21f8ec72a  kit/desc_blob.bin
 9e30e1e8efef6d12a54ad823a6ac00be  payload/pty_owrt2.ko
 d3abeb2036e1765b1579187fc69db30d  stock/handoff.sh
