@@ -158,6 +158,11 @@ On the **serial console** you want to see staging OK for all three blobs, `firin
 [   49.] mount_root: switching to ubifs overlay
 ```
 
+> **First-fire note:** if the *current* stock boot still had secondaries running (i.e. `maxcpus=1`
+> was only just written to the U-Boot env), the fire parks CPU1 and mainline comes up with
+> **one core** — expected. The next cold stock boot uses `maxcpus=1`, and the fire after that
+> brings both cores up. Check with `cat /sys/devices/system/cpu/online` on the mainline side.
+
 Then, after it settles: `ssh root@192.168.18.1 'uname -m'` → `aarch64` (mainline SSH is
 **empty-password**). **Do not arm until this manual fire lands in mainline.** If it drops back to
 stock, see `~/aap321nk-handoff/docs/RECOVERY.md` (check staging hashes and that `maxcpus=1` is in

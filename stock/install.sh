@@ -20,15 +20,36 @@ grep -qi 'ipq5018\|AAP321NK' /proc/device-tree/model 2>/dev/null || \
 echo "== 1. kit -> $K"
 mkdir -p "$K"
 for f in idu_tool owrt_Image owrt_mem.dtb desc_blob.bin pty_owrt2.ko; do
-	if [ -e "$SRC/kit/$f" ]; then
-		cp -f "$SRC/kit/$f" "$K/$f"
+	src=""
+	for d in "$SRC/kit" "$SRC/payload"; do	# pty_owrt2.ko lives in payload/, the rest in kit/
+		if [ -e "$d/$f" ]; then src="$d/$f"; break; fi
+	done
+	if [ -n "$src" ]; then
+		cp -f "$src" "$K/$f"
 	elif [ ! -e "$K/$f" ]; then
-		echo "   MISSING: $f (put it in $K manually)" >&2
+		echo "   MISSING: $f (looked in \$SRC/kit and \$SRC/payload - copy it into $K manually)" >&2
 	fi
 done
 cp -f "$SRC/stock/handoff.sh" "$K/handoff.sh"
 chmod +x "$K/idu_tool" "$K/handoff.sh"
 ls -l "$K"
+
+# The hand-off DTB must be the MAINLINE tree.  A vendor-flavoured one (ess-switch / nss-dp nodes,
+# no ethernet@) boots a kernel with NO Ethernet at all - no ipq5018-gmac-dwmac probe, PHY "failed
+# to get and enable RX clock", and the unit comes up with only `lo`.  Warn loudly, do not abort.
+if [ -e "$K/owrt_mem.dtb" ]; then
+	bad=""
+	grep -q 'ethernet@39c00000' "$K/owrt_mem.dtb" 2>/dev/null || bad="no mainline ethernet@ node"
+	grep -q 'ess-switch' "$K/owrt_mem.dtb" 2>/dev/null && bad="${bad:+$bad; }vendor ess-switch nodes"
+	if [ -n "$bad" ]; then
+		echo "   !!! owrt_mem.dtb is NOT a mainline DTB ($bad)" >&2
+		echo "       -> the hand-off will come up with NO Ethernet (only 'lo')." >&2
+		echo "       -> copy kit/owrt_mem.dtb (slot B) or kit/owrt_mem.slotA.dtb (slot A/K95)." >&2
+	else
+		slot=$(strings -a "$K/owrt_mem.dtb" 2>/dev/null | sed -n 's/.*ubi\.mtd=\(rootfs[_0-9]*\).*/\1/p' | head -1)
+		echo "   owrt_mem.dtb: mainline DTB, slot=${slot:-?} ($(md5sum "$K/owrt_mem.dtb" | cut -c1-8))"
+	fi
+fi
 
 echo "== 2. stock-side launcher (/etc/rc.local + crontab)"
 # /etc lives on a tmpfs overlay: these files only survive because rootkeep packages them into
