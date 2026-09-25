@@ -62,8 +62,8 @@ Requirements, step-by-step install, and the arming procedure: **[INSTALL.md](INS
 | `payload/` | the ARM asm payload, the exit stub, and the spliced `pty_owrt2.ko` vehicle |
 | `stock/` | run-on-the-unit: `install.sh`, `fire-once.sh`, `verify.sh`, `uninstall.sh`, `handoff.sh` (the hook), `rootkeep.sh` |
 | `mainline/` | the arm64 half: `handoff-ack` (S00 ack writer) + `install.sh` |
-| `tools/` | `extract-kernel.py` (UBI kernel volume → arm64 Image), `splice-pty.py`, `build.sh`, `make-dtb.sh`, `console.py` |
-| `docs/` | `OVERVIEW.md`, `TAKEOVER.md`, `DESIGN.md`, `FLASH-MAP.md`, `PROVENANCE.md`, `RECOVERY.md` |
+| `tools/` | `extract-kernel.py` (UBI kernel volume → arm64 Image), `splice-pty.py`, `build.sh`, `make-dtb.sh`, `console.py`, `wifi-bdf-fix.sh` (restores full WiFi TX power — see `docs/WIFI-POWER-FIX.md`) |
+| `docs/` | `OVERVIEW.md`, `TAKEOVER.md`, `DESIGN.md`, `FLASH-MAP.md`, `PROVENANCE.md`, `RECOVERY.md`, `WIFI-POWER-FIX.md` |
 
 ## Safety
 
